@@ -1,0 +1,21 @@
+[package]
+
+name = "game_server"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "game_server"
+path = "src/lib.rs"
+
+[dependencies]
+
+axum = { version = "0.8.4", features = ['ws']}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.138"
+tokio = "1.45.1"
+engine = { path = "../engine" }
+futures-util = "0.3.31"
+rand = "*"
+log = { version = "*" }
+

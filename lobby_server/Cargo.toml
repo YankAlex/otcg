@@ -1,0 +1,19 @@
+[package]
+name = "lobby_server"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "otcg"
+path = "src/main.rs"
+
+[dependencies]
+
+axum = { version = "0.8.4", features = ['ws'] }
+game_server = { path = "../game_server" }
+tokio = { version = "1.45.1", features = ['full'] }
+futures-util = "0.3.31"
+log = { version = "*" }
+env_logger = { version = "*" }
+rand = "*"
+fibre = "*"
