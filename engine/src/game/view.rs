@@ -164,7 +164,6 @@ impl CardChange {
 #[derive(Serialize, Deserialize)]
 pub struct PileView {
     cards: Vec<CardView>, 
-    ordered: bool,
     only_raw_cards: bool,
     default_visibility: Visibility,
 }
@@ -172,7 +171,6 @@ pub struct PileView {
 impl PileView {
     pub async fn from_pile(pile: Arc<Pile>, viewer: &Player) -> Self {
         Self {
-            ordered: pile.ordered,
             only_raw_cards: pile.only_raw_cards,
             default_visibility: pile.default_visibility.clone(),
             cards: join_all(pile.cards().await.into_iter().map(async |card| {CardView::from_card(card, viewer).await}).collect::<Vec<_>>()).await,

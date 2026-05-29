@@ -16,26 +16,13 @@ To run use `cargo run`. You can specify enviroment variables
 | `LIBRARY` | .library.json | From which path loads cards library
 | `ADDRESS` | 0.0.0.0:8126 | Where does server for gathering player hosts
 
+
 Now cards library stores in `.json` format:
 
-``` json
+```
 {
     ...
-    "<name (identificator of card)>": {
-        "name": "<displaying name (usually equals to identificator)>",
-        "nature": "<nature of card (for example: mana, token, main, ...)>"
-        "type": "<type of card (for example: unit, chamion, gear, ...)",
-        "cost": <cost i32> ? 0,
-        "power": <power i32> ? 0,
-        "health": <health i32> ? 0,
-        "colors": [..., "<color symbol>", ...] ? [],
-        "tags": [..., "<tag>",...] ? [],
-        "description": "<description of card>" ? "",
-        "rarity": "<rarity>" ? "",
-        "art_url": "<url of card art>" ? "",
-        "card_picture_url": "<url of card picture>" ? "",
-        "back_side_url": "<url of card's back side>" ? "",
-    },
+    "card name (id)": <RawCard>
     ...
 }
 ```
@@ -47,53 +34,349 @@ For communicating with clients used `websocket` connections to different routes:
 
 When lobby starts, no more players could connect to it, even if game has ended.
 
+# Structs in api
+
+## `Raw card`
+
+```
+{
+    "name": "<displaying name (usually equals to identificator)>",
+    "nature": "<nature of card (for example: mana, token, main, ...)>",
+    "type": "<type of card (for example: unit, chamion, gear, ...)",
+    "cost": <cost i32> ? 0,
+    "power": <power i32> ? 0,
+    "health": <health i32> ? 0,
+    "colors": [..., "<color symbol>", ...] ? [],
+    "tags": [..., "<tag>",...] ? [],
+    "description": "<description of card>" ? "",
+    "rarity": "<rarity>" ? "",
+    "art_url": "<url of card art>" ? "",
+    "card_picture_url": "<url of card picture>" ? "",
+    "back_side_url": "<url of card's back side>" ? ""
+}
+```
+
+## `Visibility`
+
+```
+"secret" | "private" | "public"
+```
+
+Visibile to noone | visible to owner | visible to everyone.
+
+## `PileType`
+
+```
+{
+    "fight_area": <battleground number i32 0..n>
+} | "hand" | "main_deck" | "mana_deck" | "trash_deck" | "base" | "mana_pool" | "special_zone" | "heroes" | "spell_queue" | 
+```
+
+## `PilePointer`
+
+```
+{
+    "player": <pile owner i32>,
+    "type": <PileType>
+}
+```
+
+## `CardPointer`
+
+```
+{
+    "index": <card index i32 (0.. - indexed from the start, -1 - space in the end, ..-2 - indexed from the end)>,
+    "pile": <PilePointer>
+}
+```
+
+## `CardChange`
+
+```
+{
+    "power": <? change power to i32>,
+    "health": <? change health to i32>,
+    "cost": <? change cost to i32>,
+    "color_cost": <? change color_cost to i32>,
+    "description": <? change description to [..., "<color_symbol>", ...]>,
+    "tags": <? change tags [..., "<tag>", ...]>,
+    "visibility": <? change visibility to Visibility>,
+    "comments": "<? change comments to>",
+    "tapped": <? change tapped to bool>
+}
+```
+
+## `CardView`
+
+```
+{
+    "raw": <? RawCard>,
+    "type": ? "<type>",
+    "rarity": ? "<rarity>",
+    "power": <? i32>,
+    "health": <? i32>,
+    "cost": <? i32>,
+    "color_cost": ? [..., "<color_symbol>", ...],
+    "description": ? "<description>",
+    "tags": ? [..., "<tag>", ...],
+    "colors": ? [..., "color_symbol", ...],
+    "visibility": <Visibility>,
+    "tapped": bool,
+    "owner": <Player>,
+    "art_url": ? "<art url>",
+    "card_picture_url": ? "<card picture url>",
+    "comments": "<comments>",
+    "nature": "<nature>",
+    "visible_to_me": <is it card visivle to player bool>,
+    "back_side_url": "<card back side url>"
+}
+```
+
+It represents how player can see a card.
+
+## `PileView`
+
+```
+{
+    "only_raw_cards": <are cards in this pile raw bool>,
+    "default_visibility": <default visivility of card Visibility>,
+    "cards": [..., <CardView> ,...]
+}
+```
+
+It represents how player can see a pile.
+
 # Messages
 
 Players can communicate with server per `message`s in `json` format.
 
-``` json
-"move_card": {
-    "source": <CardPointer>,
-    "destination": <CardPointer>,
+## Move card
+
+```
+{
+    "move_card": {
+        "source": <CardPointer>,
+        "destination": <CardPointer>
+    }
 }
 ```
 
-``` json
-"change_card": {
-    "target": <CardPointer>,
-    "changes": <CardChange>,
+Player moves card from `source` to `destination`.
+
+## Change card
+
+```
+{
+    "change_card": {
+        "target": <CardPointer>,
+        "changes": <CardChange>
+    }
 }
 ```
 
-``` json
-"change_card_to_raw": {
-    "target": <CardPointer>,
+Player changes card at `target` by `changes`.
+
+## Change card to raw
+```
+{
+    "change_card_to_raw": {
+        "target": <CardPointer>
+    }
 }
 ```
 
-``` json
-"create_card": {
-    "destination": <CardPointer>,
-    "name": "<name>",
+Player returns card at `target` to initial state, without any changes.
+
+## Create card
+
+```
+{
+    "create_card": {
+        "destination": <CardPointer>,
+        "name": "<name>"
+    }
 }
 ```
 
-``` json
-"view_pile": <PilePointer> 
+Player creates a card at `destination` by `name`.
+
+## View pile
+
+```
+{
+    "view_pile": <PilePointer> 
+}
 ```
 
-``` json
-"view_card": <CardPointer> 
+Player views `view_pile` pile.
+
+## View card
+
+```
+{
+    "view_card": <CardPointer> 
+}
 ```
 
-``` json
+Player views `view_card` card.
+
+## Turn end
+
+```
 "turn_end"
 ```
 
-``` json
+Player ends turn.
+
+## Surrender
+
+```
 "surrender"
 ```
 
-``` json
+Player surrneds. _Now it is'nt handling_.
+
+## Game info
+
+```
 "game_info"
+```
+
+Player wants to get information about game state.
+
+## Background
+
+>[!WARNING] Background is special message, which needs to send only after *Background request*.
+
+```
+{
+    "main_deck": [..., "<card name>", ...],
+    "mana_deck": [..., "<card name>", ...],
+    "special_zone": [..., "<card name>", ...],
+    "heroes": [..., "<card name>", ...],
+    "base": [..., "<card name>", ...],
+    "player": <Player>
+}
+```
+
+Player sends his begin position of cards.
+
+# Actions
+
+Server communicates with players per `action`s in `json` format.
+
+## Card moved
+
+```
+{
+    "card_moved": {
+        "source": <CardPointer>,
+        "destination": <CardPointer>
+    }
+}
+```
+
+Some player moved card from `source` to `destination`.
+
+## Card changed
+
+```
+{
+    "card_changed": {
+        "target": <CardPointer>,
+        "new_card": <CardView>
+    }
+}
+```
+
+Some player changed card at `target` to `new_card`.
+
+## Card created
+
+```
+{
+    "card_created": {
+        "destination": <CardPointer>,
+        "card": <CardView>
+    }
+}
+```
+
+Some player created a `card` card at `destination`.
+
+## View pile
+
+```
+{
+    "view_pile": {
+        "target": <PilePointer>,
+        "pile": <PileView> 
+    }
+}
+```
+
+Player viewed `pile` at `target`.
+
+## View card
+
+```
+{
+    "view_card": {
+        "target": <PileCard>,
+        "card": <CardView>
+    }
+}
+```
+
+Player viewed `card` at `target`.
+
+## Next turn
+
+```
+{
+    "next_turn": <Player>
+}
+```
+
+Next turn of `next_turn` player.
+
+## Game info
+
+```
+{
+    "game_info": {
+        "your_number": <number of player-receiver i32>,
+        "players_count": <players count usize>,
+        "fight_areas_count": <battlegrounds count usize>
+    }
+}
+```
+
+Information about current game.
+
+## BackgroundRequest
+
+```
+"background_request"
+```
+
+Server requests `Background` from player.
+
+# Communication
+
+```
+Client                         Server
+
+           +[Connection]+
+      +[Waiting for game start]+
+
+   <-----(BackgroundRequest)-----< 
+    
+   >--------(Background)--------->
+
+    +[Waiting for other players]+
+
+   <---------(GameInfo)----------< 
+
+   <<======(Communication)======>>
 ```

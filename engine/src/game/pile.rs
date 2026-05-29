@@ -7,23 +7,25 @@ use crate::{game::{Game, player::Player, pointer::CardPointer, visibility::Visib
 #[derive(Debug)]
 pub struct Pile {
     cards: Mutex<Vec<Arc<Card>>>, 
-    pub ordered: bool,
     pub only_raw_cards: bool,
     pub default_visibility: Visibility,
     pub owner: Player,
 }
 
 impl Pile {
-    pub fn new_empty(ordered: bool, default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
+    pub fn new_empty(default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
         Pile {
-            ordered, default_visibility, only_raw_cards, owner,
+            default_visibility, only_raw_cards, owner,
             cards: Mutex::new(Vec::new()),
         }
     }
 
-    pub fn new_with_cards(cards: Vec<Arc<Card>>, ordered: bool, default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
+    pub fn new_with_cards(mut cards: Vec<Arc<Card>>, shuffled: bool, default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
+        if shuffled {
+            rand::seq::SliceRandom::shuffle(cards.as_mut_slice(), &mut rand::rng());
+        }
         Pile {
-            ordered, default_visibility, only_raw_cards, owner,
+            default_visibility, only_raw_cards, owner,
             cards: Mutex::new(cards),
         }
     }

@@ -41,12 +41,12 @@ impl Game {
             fight_areas: {
                 let mut fight_areas = vec![];
                 for _ in 0..rules.fight_areas_count {
-                    fight_areas.push(Arc::new(FightArea::new(Arc::new(Pile::new_empty(false, Visibility::Public, true, player::ADMIN)), players.clone())));
+                    fight_areas.push(Arc::new(FightArea::new(Arc::new(Pile::new_empty(Visibility::Public, true, player::ADMIN)), players.clone())));
                 }
                 Mutex::new(fight_areas)
             },
             rules: Arc::new(rules),
-            spell_queue: Arc::new(Pile::new_empty(true, Visibility::Public, false, player::ADMIN)),
+            spell_queue: Arc::new(Pile::new_empty(Visibility::Public, false, player::ADMIN)),
             card_library: Arc::new(card_library),
         }
     }

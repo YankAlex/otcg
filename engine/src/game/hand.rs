@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
-use crate::{game::{pile::{CardInPile, Pile}, player::Player, visibility::Visibility}, storage::card::Card};
+use crate::{game::{pile::{CardInPile, Pile}, player::Player, visibility::Visibility}, storage::{card::Card, rules::Rules}};
 
 pub struct Hand {
     pub pile: Arc<Pile>,
 }
 
 impl Hand {
-    pub fn from_cards(cards: Vec<Arc<Card>>, player: Player) -> Self {
+    pub fn from_cards(cards: Vec<Arc<Card>>, player: Player, rules: Rules) -> Self {
         Self {
-            pile: Arc::new(Pile::new_with_cards(cards, false, Visibility::Private, false, player)), // depends on
+            pile: Arc::new(Pile::new_with_cards(cards, rules.is_hand_shuffled, Visibility::Private, false, player)), // depends on
                                                                                   // gamerules
         }
     }
     pub fn new_empty(player: Player) -> Self {
         Self {
-            pile: Arc::new(Pile::new_empty(false, Visibility::Private, false, player)), // depends on
+            pile: Arc::new(Pile::new_empty(Visibility::Private, false, player)), // depends on
                                                                                   // gamerules
         }
     }

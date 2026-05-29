@@ -21,8 +21,6 @@ pub enum Action {
         players_count: usize,
         fight_areas_count: usize,
     },
-    PlayersCount (usize),
-    FightAreasCount (usize),
     ViewPile {
         target: PilePointer,
         pile: PileView,

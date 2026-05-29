@@ -8,11 +8,11 @@ pub struct Deck {
 }
 
 impl Deck {
-    pub fn from_cards(cards: Vec<Arc<Card>>, owner: Player, visibility: Visibility, only_raw_cards: bool) -> Self {
+    pub fn from_cards(cards: Vec<Arc<Card>>, shuffled: bool, owner: Player, visibility: Visibility, only_raw_cards: bool) -> Self {
         Deck {
             pile: Arc::new(Pile::new_with_cards(
                 cards,
-                true,
+                shuffled,
                 visibility,
                 only_raw_cards, // depends on rules
                 owner.clone(),
@@ -23,7 +23,6 @@ impl Deck {
     pub fn new_empty(owner: Player, visibility: Visibility, only_raw_cards: bool) -> Self {
         Deck {
             pile: Arc::new(Pile::new_empty(
-                true,
                 visibility,
                 only_raw_cards,
                 owner.clone()

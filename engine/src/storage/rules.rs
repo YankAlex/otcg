@@ -8,6 +8,10 @@ pub struct Rules {
     pub only_raw_card_in_mana_pool: bool,
     pub only_raw_card_in_trash_deck: bool,
     pub only_raw_card_in_special_zone: bool,
+    pub is_hand_shuffled: bool,
+    pub is_main_deck_shuffled: bool,
+    pub is_mana_deck_shuffled: bool,
+    pub is_special_zone_shuffled: bool,
 }
 
 impl Rules {
@@ -21,6 +25,10 @@ impl Rules {
                 only_raw_card_in_mana_pool: true,
                 only_raw_card_in_trash_deck: true,
                 only_raw_card_in_special_zone: true,
+                is_hand_shuffled: false,
+                is_main_deck_shuffled: true,
+                is_mana_deck_shuffled: true,
+                is_special_zone_shuffled: false,
             },
             _ => Self {
                 fight_areas_count: 1,
@@ -30,6 +38,10 @@ impl Rules {
                 only_raw_card_in_mana_pool: true,
                 only_raw_card_in_trash_deck: false,
                 only_raw_card_in_special_zone: false,
+                is_hand_shuffled: false,
+                is_main_deck_shuffled: true,
+                is_mana_deck_shuffled: true,
+                is_special_zone_shuffled: false,
             }
         }
     }
