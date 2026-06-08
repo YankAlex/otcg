@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{CardChange, CardView, PileView}, visibility::Visibility}, storage::{Library, card::Card}};
 use futures_util::{SinkExt, StreamExt, stream::{SplitSink, SplitStream}};
-use rand::seq::SliceRandom;
 use serde_json::{from_str, to_string_pretty};
 use tokio::sync::Mutex;
 
@@ -35,13 +34,9 @@ impl Client {
     pub async fn recieve_player_background(self: Arc<Self>, library: &Library) -> PlayerBackground {
         self.notify_about_action(Arc::new(Action::BackgroundRequest)).await;
         let mut reader = self.ws_reader.lock().await;
-        let mut player_background_names: PlayerBackgroundNames = serde_json::from_str(
+        let player_background_names: PlayerBackgroundNames = serde_json::from_str(
             reader.next().await.unwrap().unwrap().into_text().unwrap().as_str()
         ).unwrap();
-
-        player_background_names.main_deck.shuffle(&mut rand::rng());
-        player_background_names.mana_deck.shuffle(&mut rand::rng());
-        player_background_names.special_zone.shuffle(&mut rand::rng());
 
         PlayerBackground::load_from_library(&library, player_background_names, self.player.clone()).await
     }
@@ -53,7 +48,7 @@ impl Client {
                 let source_card_in_pile = CardInPile::from_pointer(&server.game, &source).await;
                 if let Some(card) = source_card_in_pile.card().await {
                     let card_owner = card.owner.lock().await;
-                    if !server.game.rules.rights_to_touch_ones_pile(&self.player, &source_card_in_pile.pile().owner, &card_owner) {
+                    if !server.game.rules.rights_to_touch_ones_pile(&self.player, &source_card_in_pile.pile().config.owner, &card_owner) {
                         return;
                     }
                 } else {
@@ -89,7 +84,7 @@ impl Client {
                     return;
                 };
                 let card_owner = target_card.owner.lock().await.clone();
-                if !server.game.rules.rights_to_touch_ones_pile(&self.player, &target_card_in_pile.pile().owner, &card_owner) {
+                if !server.game.rules.rights_to_touch_ones_pile(&self.player, &target_card_in_pile.pile().config.owner, &card_owner) {
                     return;
                 }
                 log::trace!("Player {} changes to raw card: ->[{}]<- at {}",
@@ -109,7 +104,7 @@ impl Client {
                     return;
                 };
                 let card_owner = target_card.owner.lock().await.clone();
-                if !server.game.rules.rights_to_touch_ones_pile(&self.player, &target_card_in_pile.pile().owner, &card_owner) {
+                if !server.game.rules.rights_to_touch_ones_pile(&self.player, &target_card_in_pile.pile().config.owner, &card_owner) {
                     return;
                 }
                 log::trace!("Player {} changes card: @>[{}]<@ at {}",
@@ -123,13 +118,13 @@ impl Client {
 
             PlayerMessage::ViewPile ( target ) => {
                 log::trace!("Player {} views pile: # {} #", self.player.0, serde_json::to_string_pretty(&target).unwrap());
-                let pile_view = PileView::from_pile(server.game.get_pile(&target).await, &self.player).await;
+                let pile_view = PileView::from_pile(server.game.pile(&target).await, &self.player).await;
                 self.notify_about_action(Arc::new(Action::ViewPile {target: target, pile: pile_view})).await;
             },
 
             PlayerMessage::ViewCard ( target ) => {
                 log::trace!("Player {} views card: [{}]", self.player.0, serde_json::to_string_pretty(&target).unwrap());
-                if let Some(card) = server.game.get_card(&target).await {
+                if let Some(card) = server.game.card(&target).await {
                     let card_view = CardView::from_card(card, &self.player).await;
                     self.notify_about_action(Arc::new(Action::ViewCard {target: target, card: card_view})).await;
                 }
@@ -150,7 +145,7 @@ impl Client {
                 self.notify_about_action(Arc::new(Action::GameInfo {
                     your_number: self.player.0,
                     players_count: server.game.players_count,
-                    fight_areas_count: server.game.fight_areas.lock().await.len() 
+                    battlefields_count: server.game.battlefields.lock().await.len() 
                 })).await;
             },
 
@@ -173,7 +168,7 @@ impl Client {
         self.notify_about_action(Arc::new(Action::GameInfo {
             your_number: self.player.0,
             players_count: server.game.players_count,
-            fight_areas_count: server.game.fight_areas.lock().await.len() ,
+            battlefields_count: server.game.battlefields.lock().await.len() ,
         })).await;
         self.notify_about_action(Arc::new(Action::NextTurn (
             server.game.active_player.lock().await.clone(),

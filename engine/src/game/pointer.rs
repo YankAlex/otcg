@@ -5,16 +5,8 @@ use crate::game::Game;
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum PileType {
-    Hand,
-    MainDeck,
-    ManaDeck,
-    ManaPool,
-    TrashDeck,
-    FightArea (i32),
-    SpecialZone,
-    Heroes,
-    SpellQueue,
-    Base,
+    Name(Box<str>),
+    Battlefield(i32),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -31,7 +23,27 @@ pub struct CardPointer {
 
 impl CardPointer {
     pub async fn normalize(&mut self, game: &Game) {
-        let len = game.get_pile(&self.pile).await.size().await as i32;
+        let len = game.pile(&self.pile).await.size().await as i32;
+        self.index = self.index % (len + 1);
+        if self.index < 0 {
+            self.index += len + 1;
+        }
+    }
+}
+
+
+pub enum BoardPointer {
+    Name(Box<str>),
+}
+
+pub struct ChipPointer {
+    pub r#board: BoardPointer,
+    pub index: i32,
+}
+
+impl ChipPointer {
+    pub async fn normalize(&mut self, game: &Game) {
+        let len = game.board(&self.board).await.chips_size().await as i32;
         self.index = self.index % (len + 1);
         if self.index < 0 {
             self.index += len + 1;

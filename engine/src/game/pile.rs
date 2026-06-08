@@ -2,30 +2,43 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use crate::{game::{Game, player::Player, pointer::CardPointer, visibility::Visibility}, storage::card::Card};
+use crate::{game::{Game, player::Player, pointer::CardPointer, visibility::Visibility}, storage::card::{Card, RawCard}};
+
+#[derive(Debug)]
+pub struct PileConfig {
+    pub only_raw_cards: bool,
+    pub default_visibility: Visibility,
+    pub owner: Player,
+    pub shuffled: bool,
+}
 
 #[derive(Debug)]
 pub struct Pile {
     cards: Mutex<Vec<Arc<Card>>>, 
-    pub only_raw_cards: bool,
-    pub default_visibility: Visibility,
-    pub owner: Player,
+    pub config: PileConfig,
 }
 
 impl Pile {
-    pub fn new_empty(default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
+    pub fn new_empty(config: PileConfig) -> Self {
         Pile {
-            default_visibility, only_raw_cards, owner,
             cards: Mutex::new(Vec::new()),
+            config,
+        }
+    }
+    
+    pub fn from_raw_cards(config: PileConfig, cards: Vec<RawCard>) -> Self {
+        Pile {
+            cards: Mutex::new(cards.iter().map(|raw| Arc::new(Card::from_raw(raw, config.owner.clone(), config.default_visibility.clone()))).collect()),
+            config,
         }
     }
 
-    pub fn new_with_cards(mut cards: Vec<Arc<Card>>, shuffled: bool, default_visibility: Visibility, only_raw_cards: bool, owner: Player) -> Self {
-        if shuffled {
+    pub fn new(config: PileConfig, mut cards: Vec<Arc<Card>>) -> Self {
+        if config.shuffled {
             rand::seq::SliceRandom::shuffle(cards.as_mut_slice(), &mut rand::rng());
         }
         Pile {
-            default_visibility, only_raw_cards, owner,
+            config,
             cards: Mutex::new(cards),
         }
     }
@@ -60,7 +73,7 @@ impl CardInPile {
     }
 
     pub async fn from_pointer(game: &Game, pointer: &CardPointer) -> Self {
-        Self::new(game.get_pile(&pointer.pile).await, pointer.index)
+        Self::new(game.pile(&pointer.pile).await, pointer.index)
     }
     
     pub fn top_of(pile: Arc<Pile>) -> Self {

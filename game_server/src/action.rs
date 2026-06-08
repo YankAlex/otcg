@@ -19,7 +19,7 @@ pub enum Action {
     GameInfo {
         your_number: i32,
         players_count: usize,
-        fight_areas_count: usize,
+        battlefields_count: usize,
     },
     ViewPile {
         target: PilePointer,

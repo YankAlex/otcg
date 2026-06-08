@@ -1,47 +1,22 @@
-use crate::game::player::{self, Player};
+use std::collections::HashMap;
+
+use crate::{game::{pile::PileConfig, player::{self, Player}, visibility::Visibility}, storage::board::BoardConfig};
 
 pub struct Rules {
-    pub fight_areas_count: usize,
-    pub only_raw_card_in_hand: bool,
-    pub only_raw_card_in_main_deck: bool,
-    pub only_raw_card_in_mana_deck: bool,
-    pub only_raw_card_in_mana_pool: bool,
-    pub only_raw_card_in_trash_deck: bool,
-    pub only_raw_card_in_special_zone: bool,
-    pub is_hand_shuffled: bool,
-    pub is_main_deck_shuffled: bool,
-    pub is_mana_deck_shuffled: bool,
-    pub is_special_zone_shuffled: bool,
+    name: Box<str>,
+    pub battlefields_count: usize,
 }
 
 impl Rules {
     pub fn new(name: &str) -> Self {
         match name {
             "riftbound" => Self {
-                fight_areas_count: 2,
-                only_raw_card_in_hand: true,
-                only_raw_card_in_main_deck: true,
-                only_raw_card_in_mana_deck: true,
-                only_raw_card_in_mana_pool: true,
-                only_raw_card_in_trash_deck: true,
-                only_raw_card_in_special_zone: true,
-                is_hand_shuffled: false,
-                is_main_deck_shuffled: true,
-                is_mana_deck_shuffled: true,
-                is_special_zone_shuffled: false,
+                name: name.into(),
+                battlefields_count: 2,
             },
             _ => Self {
-                fight_areas_count: 1,
-                only_raw_card_in_hand: false,
-                only_raw_card_in_main_deck: false,
-                only_raw_card_in_mana_deck: false,
-                only_raw_card_in_mana_pool: true,
-                only_raw_card_in_trash_deck: false,
-                only_raw_card_in_special_zone: false,
-                is_hand_shuffled: false,
-                is_main_deck_shuffled: true,
-                is_mana_deck_shuffled: true,
-                is_special_zone_shuffled: false,
+                name: name.into(),
+                battlefields_count: 1,
             }
         }
     }
@@ -50,5 +25,141 @@ impl Rules {
             return false;
         }
         *player == player::ADMIN || *pile_owner == player::ADMIN && card_owner == player || player == pile_owner
+    }
+    pub fn piles(&self, player: Player) -> HashMap<Box<str>, PileConfig> {
+        match &self.name[..] {
+            "unmatched" => {
+                let mut piles = HashMap::new();
+                match player {
+                    player::WATCHER => {}
+                    player::ADMIN => {
+                        piles.insert("spell_queue".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player::ADMIN
+                        });
+                    },
+                    player => {
+                        piles.insert("heroes".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                        piles.insert("hand".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Private,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("main_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Secret,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("additional_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Secret,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("trash_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                        piles.insert("base".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                    }
+                }
+                piles 
+            },
+            _ => {
+                let mut piles = HashMap::new();
+                match player {
+                    player::WATCHER => {}
+                    player::ADMIN => {
+                        piles.insert("spell_queue".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player::ADMIN
+                        });
+                    },
+                    player => {
+                        piles.insert("heroes".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                        piles.insert("hand".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Private,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("main_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Secret,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("mana_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Secret,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("trash_deck".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                        piles.insert("mana_pool".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: true,
+                            owner: player.clone(),
+                        });
+                        piles.insert("base".into(), PileConfig {
+                            only_raw_cards: false,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                        piles.insert("special_zone".into(), PileConfig {
+                            only_raw_cards: true,
+                            default_visibility: Visibility::Public,
+                            shuffled: false,
+                            owner: player.clone(),
+                        });
+                    }
+                }
+                piles 
+            }
+        }
+    }
+    pub fn boards(&self) -> HashMap<Box<str>, BoardConfig> {
+        match &self.name[..] {
+            "unmatched" => {
+                let mut boards = HashMap::new();
+                boards.insert("board".into(), BoardConfig {
+                    height: 100,
+                    width: 100,
+                    default_img_url: "".into(),
+                });
+                boards
+            },
+            _ => HashMap::new(),
+        }
     }
 }

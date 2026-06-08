@@ -5,6 +5,8 @@ use tokio::sync::Mutex;
 use crate::storage::card::RawCard;
 
 pub mod card;
+pub mod board;
+pub mod chip;
 pub mod rules;
 
 pub struct Library {

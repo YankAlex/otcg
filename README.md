@@ -68,8 +68,12 @@ Visibile to noone | visible to owner | visible to everyone.
 
 ```
 {
-    "fight_area": <battleground number i32 0..n>
-} | "hand" | "main_deck" | "mana_deck" | "trash_deck" | "base" | "mana_pool" | "special_zone" | "heroes" | "spell_queue" | 
+    "battlefield": <battleground number i32 0..n>
+} | {
+    "name": "<pile name>"
+}
+
+(in riftbound rules) "name": "hand" | "main_deck" | "mana_deck" | "trash_deck" | "base" | "mana_pool" | "special_zone" | "heroes" | "spell_queue" | 
 ```
 
 ## `PilePointer`
@@ -347,7 +351,7 @@ Next turn of `next_turn` player.
     "game_info": {
         "your_number": <number of player-receiver i32>,
         "players_count": <players count usize>,
-        "fight_areas_count": <battlegrounds count usize>
+        "battlefields_count": <battlegrounds count usize>
     }
 }
 ```

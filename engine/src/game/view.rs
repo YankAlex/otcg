@@ -68,7 +68,7 @@ impl CardView {
         if card.can_be_viewed_by(viewer).await {
             CardView {
                 raw: Some(card.raw.clone()),
-                r#type: Some(card.r#type.clone()),
+                r#type: Some(card.raw.r#type.clone()),
                 name: Some(card.name.lock().await.clone()),
                 power: Some(card.power.lock().await.clone()),
                 health: Some(card.health.lock().await.clone()),
@@ -79,13 +79,13 @@ impl CardView {
                 colors: Some(card.colors.lock().await.clone()),
                 visibility: card.visibility.lock().await.clone(),
                 owner: card.owner.lock().await.clone(),
-                rarity: Some(card.rarity.clone()),
-                art_url: Some(card.art_url.clone()),
-                card_picture_url: Some(card.card_picture_url.clone()),
+                rarity: Some(card.raw.rarity.clone()),
+                art_url: Some(card.raw.art_url.clone()),
+                card_picture_url: Some(card.raw.card_picture_url.clone()),
                 comments: card.comments.lock().await.clone(),
-                nature: card.nature.clone(),
+                nature: card.raw.nature.clone(),
                 tapped: card.tapped.lock().await.clone(),
-                back_side_url: card.back_side_url.clone(),
+                back_side_url: card.raw.back_side_url.clone(),
                 visible_to_me: true,
             }
         } else {
@@ -106,9 +106,9 @@ impl CardView {
                 visibility: card.visibility.lock().await.clone(),
                 owner: card.owner.lock().await.clone(),
                 comments: card.comments.lock().await.clone(),
-                nature: card.nature.clone(),
+                nature: card.raw.nature.clone(),
                 tapped: card.tapped.lock().await.clone(),
-                back_side_url: card.back_side_url.clone(),
+                back_side_url: card.raw.back_side_url.clone(),
                 visible_to_me: false,
             }
         }
@@ -171,8 +171,8 @@ pub struct PileView {
 impl PileView {
     pub async fn from_pile(pile: Arc<Pile>, viewer: &Player) -> Self {
         Self {
-            only_raw_cards: pile.only_raw_cards,
-            default_visibility: pile.default_visibility.clone(),
+            only_raw_cards: pile.config.only_raw_cards,
+            default_visibility: pile.config.default_visibility.clone(),
             cards: join_all(pile.cards().await.into_iter().map(async |card| {CardView::from_card(card, viewer).await}).collect::<Vec<_>>()).await,
         }
     }

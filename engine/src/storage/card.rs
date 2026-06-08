@@ -35,7 +35,6 @@ pub struct RawCard {
 #[derive(Debug)]
 pub struct Card {
     pub raw: RawCard,
-    pub r#type: Box<str>,
     pub name: Mutex<Box<str>>,
     pub power: Mutex<i32>,
     pub health: Mutex<i32>,
@@ -48,11 +47,6 @@ pub struct Card {
     pub owner: Mutex<Player>,
     pub comments: Mutex<Box<str>>,
     pub tapped: Mutex<bool>,
-    pub rarity: Box<str>,
-    pub art_url: Box<str>,
-    pub card_picture_url: Box<str>,
-    pub nature: Box<str>,
-    pub back_side_url: Box<str>,
 }
 
 impl Card {
@@ -78,8 +72,6 @@ impl Card {
     pub fn from_raw(raw_card: &RawCard, owner: Player, visibility: Visibility) -> Self {
         Card {
             raw: raw_card.clone(),
-            r#type: raw_card.r#type.clone(),
-            rarity: raw_card.rarity.clone(),
             name: Mutex::new(raw_card.name.clone()),
             power: Mutex::new(raw_card.power.clone()),
             health: Mutex::new(raw_card.health.clone()),
@@ -91,11 +83,7 @@ impl Card {
             owner: Mutex::new(owner),
             visibility: Mutex::new(visibility),
             comments: Mutex::new("".into()),
-            art_url: raw_card.art_url.clone(),
-            card_picture_url: raw_card.card_picture_url.clone(),
-            nature: raw_card.nature.clone(),
             tapped: Mutex::new(false), 
-            back_side_url: raw_card.back_side_url.clone(),
         }
     }
 }
