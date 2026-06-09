@@ -1,4 +1,4 @@
-use engine::game::{player::Player, pointer::{CardPointer, PilePointer}, view::{CardView, PileView}};
+use engine::game::{player::Player, pointer::{BoardPointer, CardPointer, PilePointer}, view::{BoardView, CardView, ChipView, PileView}};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -28,6 +28,14 @@ pub enum Action {
     ViewCard {
         target: CardPointer,
         card: CardView,
+    },
+    ViewBoard {
+        target: BoardPointer,
+        board: BoardView,
+    },
+    ViewChip {
+        target: BoardPointer,
+        board: ChipView,
     },
     NextTurn (Player),
     BackgroundRequest,

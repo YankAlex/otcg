@@ -10,6 +10,8 @@ pub mod pile;
 // pub mod hand;
 // pub mod deck;
 pub mod visibility;
+pub mod coordinates;
+pub mod viewable;
 pub mod background;
 pub mod pointer;
 pub mod view;

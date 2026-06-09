@@ -43,7 +43,6 @@ impl Client {
 
     pub async fn handle_message(&self, message: PlayerMessage, server: Arc<Server>) {
         match message {
-
             PlayerMessage::MoveCard { source, destination } => {
                 let source_card_in_pile = CardInPile::from_pointer(&server.game, &source).await;
                 if let Some(card) = source_card_in_pile.card().await {
@@ -65,7 +64,18 @@ impl Client {
                     server.notify_clients_about_move(&source, &destination).await;
                 }
             },
-
+            PlayerMessage::DragChip { destination, coordinates } => {
+                todo!();
+            },
+            PlayerMessage::ViewChip(pointer) => {
+                todo!();
+            },
+            PlayerMessage::CreateChip { destination, coordinates, name } => {
+                todo!();
+            },
+            PlayerMessage::ViewBoard(pointer) => {
+                todo!();
+            },
             PlayerMessage::CreateCard { name, destination } => {
                 log::trace!("Player {} creates card: [{}]-> {}", self.player.0, name, serde_json::to_string_pretty(&destination).unwrap());
                 let Ok(raw_card) = server.game.card_library.get_raw_card_by_name(&name).await else {

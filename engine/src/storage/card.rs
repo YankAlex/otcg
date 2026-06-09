@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use tokio::sync::Mutex;
 
-use crate::{game::{player::{self, Player}, visibility::Visibility}, storage::Error};
+use crate::{game::{player::{self, Player}, viewable::Viewable, visibility::Visibility}, storage::Error};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RawCard {
@@ -49,14 +49,12 @@ pub struct Card {
     pub tapped: Mutex<bool>,
 }
 
-impl Card {
-    pub async fn can_be_viewed_by(&self, player: &Player) -> bool {
-        match player {
-            &player::ADMIN => true,
-            player if *player == *self.owner.lock().await && self.visibility.lock().await.can_be_viewed_by_owner() => true,
-            _ if self.visibility.lock().await.can_be_viewed_by_not_owner() => true,
-            _ => false,
-        }
+impl Viewable for Card {
+    async fn owner(&self) -> Player {
+        self.owner.lock().await.clone()
+    }
+    async fn visibility(&self) -> Visibility {
+        self.visibility.lock().await.clone()
     }
 }
 

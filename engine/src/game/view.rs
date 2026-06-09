@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{game::{pile::Pile, player::Player, visibility::Visibility}, storage::card::{Card, RawCard}};
+use crate::{game::{coordinates::Coordinates, pile::Pile, player::Player, viewable::Viewable, visibility::Visibility}, storage::{card::{Card, RawCard}, chip::{Chip, RawChip}}};
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 
@@ -177,3 +177,37 @@ impl PileView {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ChipView {
+    raw: Option<RawChip>,
+    health: Option<i32>,
+    coordinates: Coordinates,
+    owner: Player,
+}
+
+impl ChipView {
+    pub async fn from_chip(chip: Arc<Chip>, viewer: &Player) -> Self {
+        if chip.can_be_viewed_by(viewer).await {
+            Self {
+                raw: Some(chip.raw.clone()),
+                health: Some(chip.health.lock().await.clone()),
+                coordinates: chip.coordinates.lock().await.clone(),
+                owner: chip.owner.lock().await.clone(),
+            }
+        } else {
+            Self {
+                raw: None,
+                health: None,
+                coordinates: chip.coordinates.lock().await.clone(),
+                owner: chip.owner.lock().await.clone(),
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct BoardView {
+    chips: Vec<ChipView>,
+}
+

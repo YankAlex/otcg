@@ -1,4 +1,4 @@
-use engine::game::{pointer::{CardPointer, PilePointer}, view::CardChange};
+use engine::game::{coordinates::Coordinates, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::CardChange};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -19,10 +19,21 @@ pub enum PlayerMessage {
         destination: CardPointer,
         name: Box<str>,
     },
+    CreateChip {
+        destination: ChipPointer,
+        coordinates: Coordinates,
+        name: Box<str>,
+    },
+    DragChip {
+        destination: ChipPointer,
+        coordinates: Coordinates,
+    },
     TurnEnd,
     Surrender,
     ViewPile (PilePointer),
+    ViewBoard (BoardPointer),
     ViewCard (CardPointer),
+    ViewChip (ChipPointer),
     GameInfo,
 }
 
