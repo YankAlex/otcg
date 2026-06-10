@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
-use crate::game::{coordinates::Coordinates, player::Player, viewable::Viewable, visibility::Visibility};
+use crate::{game::{coordinates::Coordinates, player::Player, viewable::Viewable, visibility::Visibility}, storage::Error};
 
 pub struct Chip {
     pub raw: RawChip,
@@ -13,9 +13,18 @@ pub struct Chip {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RawChip {
-    img_url: Box<str>,
+    name: Box<str>,
+    art_url: Box<str>,
     health: i32,
-    color: Box<str>,
+    colors: Vec<Box<str>>,
+}
+
+impl RawChip {
+    pub fn from_value(value: serde_json::Value) -> Result<Self, Error> {
+        serde_json::from_value(value.clone()).map_err(|err| {
+            Error::WrongValue(value, format!("{err}").into())
+        })
+    }
 }
 
 impl Chip {
@@ -39,4 +48,26 @@ impl Viewable for Chip {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ChipChange {
+    #[serde(skip_serializing_if="Option::is_none")]
+    visibility: Option<Visibility>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    health: Option<i32>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    coordinates: Option<Coordinates>,
+}
 
+impl ChipChange {
+    pub async fn apply_to(&self, chip: &Chip) {
+        if let Some(value) = &self.visibility {
+            *chip.visibility.lock().await = value.clone();
+        }
+        if let Some(value) = &self.health {
+            *chip.health.lock().await = *value;
+        }
+        if let Some(value) = &self.coordinates {
+            *chip.coordinates.lock().await = value.clone();
+        }
+    }
+}

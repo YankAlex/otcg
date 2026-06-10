@@ -1,27 +1,29 @@
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
-use crate::storage::chip::Chip;
+use crate::{game::{Game, pointer::ChipPointer, position}, storage::chip::Chip};
 
 pub struct Board {
-    config: BoardConfig,
-    img_url: Mutex<Box<str>>,
+    pub raw: RawBoard,
+    pub img_url: Mutex<Box<str>>,
     pub chips: Mutex<Vec<Arc<Chip>>>,
 }
 
-pub struct BoardConfig {
+#[derive(Deserialize, Serialize, Clone)]
+pub struct RawBoard {
     pub height: usize,
     pub width: usize,
-    pub default_img_url: Box<str>,
+    pub img_url: Box<str>,
 }
 
 impl Board {
-    pub fn new_empty(config: BoardConfig) -> Self {
+    pub fn new_empty(raw: RawBoard) -> Self {
         Self {
-            img_url: Mutex::new(config.default_img_url.clone()),
-            config: config,
+            img_url: Mutex::new(raw.img_url.clone()),
             chips: Mutex::new(vec![]),
+            raw,
         }
     }
     
@@ -29,3 +31,29 @@ impl Board {
         self.chips.lock().await.len()
     }
 }
+
+pub struct ChipOnBoard {
+    pub board: Arc<Board>,
+    pub index: i32,
+}
+
+impl ChipOnBoard {
+    pub async fn from_pointer(game: &Game, pointer: &ChipPointer) -> Self {
+        Self {
+            board: game.board(&pointer.board).await,
+            index: pointer.index,
+        }
+    }
+    pub async fn chip(&self) -> Option<Arc<Chip>> {
+        let chips = self.board.chips.lock().await;
+        let index = position(self.index, chips.len());
+        chips.get(index).cloned()
+    }
+    pub async fn insert(&self, chip: Arc<Chip>) {
+        let mut chips = self.board.chips.lock().await;
+        let index = position(self.index, chips.len());
+        chips.insert(index, chip);
+    }
+}
+
+

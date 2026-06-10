@@ -1,4 +1,4 @@
-use engine::game::{coordinates::Coordinates, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::CardChange};
+use engine::{game::{coordinates::Coordinates, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::CardChange}, storage::chip::ChipChange};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -24,9 +24,9 @@ pub enum PlayerMessage {
         coordinates: Coordinates,
         name: Box<str>,
     },
-    DragChip {
-        destination: ChipPointer,
-        coordinates: Coordinates,
+    ChangeChip {
+        target: ChipPointer,
+        changes: ChipChange,
     },
     TurnEnd,
     Surrender,

@@ -13,7 +13,7 @@ To run use `cargo run`. You can specify enviroment variables
 |-------|---------------|---------------------------------------|
 | `GAME` | riftbound     | What game rules use
 | `PLAYERS` | 2          | Players count
-| `LIBRARY` | .library.json | From which path loads cards library
+| `LIBRARY` | .library.json | From which path loads cards&chips library
 | `ADDRESS` | 0.0.0.0:8126 | Where does server for gathering player hosts
 
 
@@ -21,9 +21,16 @@ Now cards library stores in `.json` format:
 
 ```
 {
-    ...
-    "card name (id)": <RawCard>
-    ...
+    "cards": {
+        ...
+        "card name (id)": <RawCard>
+        ...
+    },
+    "chips": {
+        ...
+        "chip name (id)": <RawChip>
+        ...
+    },
 }
 ```
 
@@ -36,7 +43,18 @@ When lobby starts, no more players could connect to it, even if game has ended.
 
 # Structs in api
 
-## `Raw card`
+## `RawChip`
+
+```
+{
+    "name": "<displaying name (usually equals to identificator)>",
+    "health": <health i32> ? 0,
+    "colors": [..., "<color symbol>", ...] ? [],
+    "art_url": "<url of card art>" ? "",
+}
+```
+
+## `RawCard`
 
 ```
 {
@@ -53,6 +71,16 @@ When lobby starts, no more players could connect to it, even if game has ended.
     "art_url": "<url of card art>" ? "",
     "card_picture_url": "<url of card picture>" ? "",
     "back_side_url": "<url of card's back side>" ? ""
+}
+```
+
+## `RawBoard`
+
+```
+{
+    height: <usize>,
+    width: <usize>,
+    img_url: "<url of image on board>"
 }
 ```
 
@@ -94,6 +122,27 @@ Visibile to noone | visible to owner | visible to everyone.
 }
 ```
 
+## `BoardPointer`
+
+```
+{
+    "name": "<board name>"
+}
+
+(in unmatched rules) "name": "board"
+```
+
+## `ChipPointer`
+
+```
+{
+    "board": <BoardPointer>
+    "index": <card index i32 (as it is in CardPointer)>
+}
+
+(in unmatched rules) "name": "board"
+```
+
 ## `CardChange`
 
 ```
@@ -107,6 +156,16 @@ Visibile to noone | visible to owner | visible to everyone.
     "visibility": <? change visibility to Visibility>,
     "comments": "<? change comments to>",
     "tapped": <? change tapped to bool>
+}
+```
+
+## `ChipChange`
+
+```
+{
+    "health": <? change health to i32>,
+    "visibility": <? change visibility to Visibility>,
+    "coordinates": <Coordinates>,
 }
 ```
 
@@ -138,6 +197,28 @@ Visibile to noone | visible to owner | visible to everyone.
 
 It represents how player can see a card.
 
+## `Coordinates`
+
+```
+{
+    "x": <i32>,
+    "y": <i32>
+}
+```
+
+## `ChipView`
+
+```
+{
+    "raw": <? RawChip>,
+    "health": <? i32>,
+    "owner": <Player>,
+    "coordinates": <Coordinates>
+}
+```
+
+It represents how player can see a chip.
+
 ## `PileView`
 
 ```
@@ -149,6 +230,18 @@ It represents how player can see a card.
 ```
 
 It represents how player can see a pile.
+
+## `BoardView`
+
+```
+{
+    "raw": <RawBoard>,
+    "img_url": <current img of board, initial you can get from "raw" propertie>,
+    "chips": [..., <ChipView> ,...]
+}
+```
+
+It represents how player can see a board.
 
 # Messages
 
@@ -180,7 +273,21 @@ Player moves card from `source` to `destination`.
 
 Player changes card at `target` by `changes`.
 
+## Change chip
+
+```
+{
+    "change_chip": {
+        "target": <ChipPointer>,
+        "changes": <ChipChange>
+    }
+}
+```
+
+Player changes chip at `target` by `changes`.
+
 ## Change card to raw
+
 ```
 {
     "change_card_to_raw": {
@@ -204,6 +311,20 @@ Player returns card at `target` to initial state, without any changes.
 
 Player creates a card at `destination` by `name`.
 
+## Create chip
+
+```
+{
+    "create_chip": {
+        "destination": <ChipPointer>,
+        "name": "<name>",
+        "coordinates": <Coordinates>
+    }
+}
+```
+
+Player creates a chip at `destination` on `coordinates` by `name`.
+
 ## View pile
 
 ```
@@ -214,6 +335,16 @@ Player creates a card at `destination` by `name`.
 
 Player views `view_pile` pile.
 
+## View board
+
+```
+{
+    "view_board": <BoardPointer> 
+}
+```
+
+Player views `view_pile` board.
+
 ## View card
 
 ```
@@ -223,6 +354,16 @@ Player views `view_pile` pile.
 ```
 
 Player views `view_card` card.
+
+## View chip
+
+```
+{
+    "view_chip": <ChipPointer> 
+}
+```
+
+Player views `view_chip` chip.
 
 ## Turn end
 
@@ -254,12 +395,23 @@ Player wants to get information about game state.
 
 ```
 {
-    "main_deck": [..., "<card name>", ...],
-    "mana_deck": [..., "<card name>", ...],
-    "special_zone": [..., "<card name>", ...],
-    "heroes": [..., "<card name>", ...],
-    "base": [..., "<card name>", ...],
-    "player": <Player>
+    "piles": {
+        ...
+        "name": [..., "<card name>", ...],
+        ...
+    }
+}
+
+(in riftbounds rules:)
+
+{
+    "piles": {
+        "main_deck": [..., "<card name>", ...],
+        "mana_deck": [..., "<card name>", ...],
+        "special_zone": [..., "<card name>", ...],
+        "heroes": [..., "<card name>", ...],
+        "base": [..., "<card name>", ...],
+    }
 }
 ```
 
@@ -267,7 +419,7 @@ Player sends his begin position of cards.
 
 # Actions
 
-Server communicates with players per `action`s in `json` format.
+Server communicates with players by `action`s in `json` format.
 
 ## Card moved
 
@@ -295,6 +447,19 @@ Some player moved card from `source` to `destination`.
 
 Some player changed card at `target` to `new_card`.
 
+## Chip changed
+
+```
+{
+    "chip_changed": {
+        "target": <ChipPointer>,
+        "new_chip": <ChipView>
+    }
+}
+```
+
+Some player changed chip at `target` to `new_chip`.
+
 ## Card created
 
 ```
@@ -302,6 +467,19 @@ Some player changed card at `target` to `new_card`.
     "card_created": {
         "destination": <CardPointer>,
         "card": <CardView>
+    }
+}
+```
+
+Some player created a `card` card at `destination`.
+
+## Chip created
+
+```
+{
+    "chip_created": {
+        "destination": <ChipPointer>,
+        "chip": <ChipView>
     }
 }
 ```
@@ -321,18 +499,44 @@ Some player created a `card` card at `destination`.
 
 Player viewed `pile` at `target`.
 
+## View board
+
+```
+{
+    "view_board": {
+        "target": <BoardPointer>,
+        "board": <BoardView> 
+    }
+}
+```
+
+Player viewed `board` at `target`.
+
 ## View card
 
 ```
 {
     "view_card": {
-        "target": <PileCard>,
+        "target": <CardPointer>,
         "card": <CardView>
     }
 }
 ```
 
 Player viewed `card` at `target`.
+
+## View chip
+
+```
+{
+    "view_chip": {
+        "target": <ChipPointer>,
+        "card": <ChipView>
+    }
+}
+```
+
+Player viewed `chip` at `target`.
 
 ## Next turn
 

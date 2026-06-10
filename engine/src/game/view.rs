@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{game::{coordinates::Coordinates, pile::Pile, player::Player, viewable::Viewable, visibility::Visibility}, storage::{card::{Card, RawCard}, chip::{Chip, RawChip}}};
+use crate::{game::{coordinates::Coordinates, pile::Pile, player::Player, viewable::Viewable, visibility::Visibility}, storage::{board::{Board, RawBoard}, card::{Card, RawCard}, chip::{Chip, RawChip}}};
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 
@@ -208,6 +208,18 @@ impl ChipView {
 
 #[derive(Serialize, Deserialize)]
 pub struct BoardView {
+    raw: RawBoard,
+    img_url: Box<str>,
     chips: Vec<ChipView>,
+}
+
+impl BoardView {
+    pub async fn from_board(board: Arc<Board>, viewer: &Player) -> Self {
+        Self {
+            raw: board.raw.clone(),
+            img_url: board.img_url.lock().await.clone(),
+            chips: join_all(board.chips.lock().await.iter().map(async |chip| ChipView::from_chip(chip.clone(), viewer).await)).await,
+        }
+    }
 }
 

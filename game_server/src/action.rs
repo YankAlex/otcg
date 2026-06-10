@@ -1,4 +1,4 @@
-use engine::game::{player::Player, pointer::{BoardPointer, CardPointer, PilePointer}, view::{BoardView, CardView, ChipView, PileView}};
+use engine::game::{player::Player, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::{BoardView, CardView, ChipView, PileView}};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -34,8 +34,16 @@ pub enum Action {
         board: BoardView,
     },
     ViewChip {
-        target: BoardPointer,
-        board: ChipView,
+        target: ChipPointer,
+        chip: ChipView,
+    },
+    ChipCreated {
+        destination: ChipPointer,
+        chip: ChipView,
+    },
+    ChipChanged {
+        target: ChipPointer,
+        new_chip: ChipView,
     },
     NextTurn (Player),
     BackgroundRequest,

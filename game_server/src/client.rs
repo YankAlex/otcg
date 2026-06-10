@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
-use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{CardChange, CardView, PileView}, visibility::Visibility}, storage::{Library, card::Card}};
+use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{BoardView, CardChange, CardView, ChipView, PileView}, visibility::Visibility}, storage::{Library, board::ChipOnBoard, card::Card, chip::Chip}};
 use futures_util::{SinkExt, StreamExt, stream::{SplitSink, SplitStream}};
 use serde_json::{from_str, to_string_pretty};
 use tokio::sync::Mutex;
@@ -64,17 +64,50 @@ impl Client {
                     server.notify_clients_about_move(&source, &destination).await;
                 }
             },
-            PlayerMessage::DragChip { destination, coordinates } => {
-                todo!();
+            PlayerMessage::ChangeChip { target, changes } => {
+                let chip_on_board = ChipOnBoard::from_pointer(&server.game, &target).await;
+
+                if let Some(chip) = chip_on_board.chip().await {
+                    log::trace!("Player {} changes chip: {:?} to {:?}", self.player.0, target, changes);
+                    changes.apply_to(&chip).await;
+                    server.notify_clients_about_chip_change(&target, chip).await;
+                }
+                
             },
             PlayerMessage::ViewChip(pointer) => {
-                todo!();
+                let chip_on_board = ChipOnBoard::from_pointer(&server.game, &pointer).await;
+
+                if let Some(chip) = chip_on_board.chip().await {
+                    log::trace!("Player {} views chip: {:?}", self.player.0, pointer);
+                    self.notify_about_action(Arc::new(
+                        Action::ViewChip {
+                            target: pointer,
+                            chip: ChipView::from_chip(chip, &self.player).await, 
+                        }
+                    )).await;
+                }
             },
             PlayerMessage::CreateChip { destination, coordinates, name } => {
-                todo!();
+                log::trace!("Player {} creates chip: [{}]-> {:?} on ({:?})", self.player.0, name, destination, coordinates);
+                let Ok(raw_chip) = server.game.card_library.get_raw_chip_by_name(&name).await else {
+                    log::error!("Can't load chip {}", name);
+                    return;
+                };
+                let chip = Arc::new(Chip::new_from_raw(raw_chip, self.player.clone(), Visibility::Public));
+                let destination_space_on_board = ChipOnBoard::from_pointer(&server.game, &destination).await;
+                destination_space_on_board.insert(chip.clone()).await;
+                server.notify_clients_about_chip_create(chip, &destination).await;
             },
             PlayerMessage::ViewBoard(pointer) => {
-                todo!();
+                let board = server.game.board(&pointer).await.clone();
+
+                log::trace!("Player {} views board: {:?}", self.player.0, pointer);
+                self.notify_about_action(Arc::new(
+                    Action::ViewBoard {
+                        target: pointer,
+                        board: BoardView::from_board(board, &self.player).await, 
+                    }
+                )).await;
             },
             PlayerMessage::CreateCard { name, destination } => {
                 log::trace!("Player {} creates card: [{}]-> {}", self.player.0, name, serde_json::to_string_pretty(&destination).unwrap());

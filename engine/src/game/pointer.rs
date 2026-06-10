@@ -31,12 +31,13 @@ impl CardPointer {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
 pub enum BoardPointer {
     Name(Box<str>),
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ChipPointer {
     pub r#board: BoardPointer,
     pub index: i32,

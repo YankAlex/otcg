@@ -16,6 +16,14 @@ pub mod background;
 pub mod pointer;
 pub mod view;
 
+pub fn position(index: i32, len: usize) -> usize {
+    let mut index = index % (len as i32 + 1);
+    if index < 0 {
+        index += len as i32 + 1;
+    }
+    index as usize
+}
+
 pub struct Game {
     player_areas: Vec<Arc<PlayerArea>>,
     pub players_count: usize,
@@ -43,7 +51,7 @@ impl Game {
             player_areas: players_backgrund.into_iter().map(|background| Arc::new(PlayerArea::new(background, &rules))).collect(),
             battlefields: {
                 let mut battlefields = vec![];
-                for _ in 0..rules.battlefields_count {
+                for _ in 0..rules.battlefields_count() {
                     battlefields.push(Arc::new(Battlefield::new(Arc::new(Pile::new_empty(pile::PileConfig {
                         default_visibility: Visibility::Public,
                         owner: player::ADMIN,

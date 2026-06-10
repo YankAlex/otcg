@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{game::{pile::PileConfig, player::{self, Player}, visibility::Visibility}, storage::board::BoardConfig};
+use crate::{game::{pile::PileConfig, player::{self, Player}, visibility::Visibility}, storage::board::RawBoard};
 
 pub struct Rules {
     name: Box<str>,
-    pub battlefields_count: usize,
 }
 
 impl Rules {
@@ -12,12 +11,16 @@ impl Rules {
         match name {
             "riftbound" => Self {
                 name: name.into(),
-                battlefields_count: 2,
             },
             _ => Self {
                 name: name.into(),
-                battlefields_count: 1,
             }
+        }
+    }
+    pub fn battlefields_count(&self) -> usize {
+        match &self.name[..] {
+            "riftbound" => 2,
+            _ => 1,
         }
     }
     pub fn rights_to_touch_ones_pile(&self, player: &Player, pile_owner: &Player, card_owner: &Player) -> bool {
@@ -32,14 +35,7 @@ impl Rules {
                 let mut piles = HashMap::new();
                 match player {
                     player::WATCHER => {}
-                    player::ADMIN => {
-                        piles.insert("spell_queue".into(), PileConfig {
-                            only_raw_cards: false,
-                            default_visibility: Visibility::Public,
-                            shuffled: false,
-                            owner: player::ADMIN
-                        });
-                    },
+                    player::ADMIN => {},
                     player => {
                         piles.insert("heroes".into(), PileConfig {
                             only_raw_cards: false,
@@ -148,14 +144,14 @@ impl Rules {
             }
         }
     }
-    pub fn boards(&self) -> HashMap<Box<str>, BoardConfig> {
+    pub fn boards(&self) -> HashMap<Box<str>, RawBoard> {
         match &self.name[..] {
             "unmatched" => {
                 let mut boards = HashMap::new();
-                boards.insert("board".into(), BoardConfig {
+                boards.insert("board".into(), RawBoard {
                     height: 100,
                     width: 100,
-                    default_img_url: "".into(),
+                    img_url: "".into(),
                 });
                 boards
             },

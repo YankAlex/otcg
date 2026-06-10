@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use crate::{game::{Game, player::Player, pointer::CardPointer, visibility::Visibility}, storage::card::{Card, RawCard}};
+use crate::{game::{Game, player::Player, pointer::CardPointer, position, visibility::Visibility}, storage::card::{Card, RawCard}};
 
 #[derive(Debug)]
 pub struct PileConfig {
@@ -57,13 +57,6 @@ pub struct CardInPile {
     index: i32,
 }
 
-fn position(index: i32, len: usize) -> usize {
-    let mut index = index % (len as i32 + 1);
-    if index < 0 {
-        index += len as i32 + 1;
-    }
-    index as usize
-}
 
 impl CardInPile {
     pub fn new(pile: Arc<Pile>, index: i32) -> Self {

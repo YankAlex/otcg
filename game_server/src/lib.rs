@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 use rand::seq::SliceRandom;
 use tokio::sync::Mutex;
-use engine::{game::{Game, player::{self, Player}, pointer::CardPointer}, storage::{Library, card::Card, rules::Rules}};
+use engine::{game::{Game, player::{self, Player}, pointer::{CardPointer, ChipPointer}, view::ChipView}, storage::{Library, card::Card, chip::Chip, rules::Rules}};
 use axum::extract::ws::WebSocket;
 use futures_util::future::join_all;
 use engine::game::view;
@@ -68,6 +68,28 @@ impl Server {
             let action = Arc::new(Action::CardCreated {
                 card: CardView::from_card(card.clone(), &pl.player).await,
                 destination: destination.clone(),
+            });
+            pl.notify_about_action(action).await;
+        }).collect::<Vec<_>>()).await;
+    }
+    
+    pub async fn notify_clients_about_chip_create(&self, chip: Arc<Chip>, destination: &ChipPointer) {
+        let clients = self.clients.lock().await.clone();
+        join_all(clients.iter().map(async |pl| {
+            let action = Arc::new(Action::ChipCreated {
+                chip: ChipView::from_chip(chip.clone(), &pl.player).await,
+                destination: destination.clone(),
+            });
+            pl.notify_about_action(action).await;
+        }).collect::<Vec<_>>()).await;
+    }
+
+    pub async fn notify_clients_about_chip_change(&self, target: &ChipPointer, new_chip: Arc<Chip>) {
+        let clients = self.clients.lock().await.clone();
+        join_all(clients.iter().map(async |pl| {
+            let action = Arc::new(Action::ChipChanged {
+                new_chip: ChipView::from_chip(new_chip.clone(), &pl.player).await,
+                target: target.clone(),
             });
             pl.notify_about_action(action).await;
         }).collect::<Vec<_>>()).await;
