@@ -23,7 +23,7 @@ pub struct CardPointer {
 
 impl CardPointer {
     pub async fn normalize(&mut self, game: &Game) {
-        let len = game.pile(&self.pile).await.size().await as i32;
+        let len = game.pile(&self.pile).await.unwrap().size().await as i32;
         self.index = self.index % (len + 1);
         if self.index < 0 {
             self.index += len + 1;
@@ -45,7 +45,7 @@ pub struct ChipPointer {
 
 impl ChipPointer {
     pub async fn normalize(&mut self, game: &Game) {
-        let len = game.board(&self.board).await.chips_size().await as i32;
+        let len = game.board(&self.board).await.unwrap().chips_size().await as i32;
         self.index = self.index % (len + 1);
         if self.index < 0 {
             self.index += len + 1;

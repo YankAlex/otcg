@@ -44,7 +44,9 @@ impl Client {
     pub async fn handle_message(&self, message: PlayerMessage, server: Arc<Server>) {
         match message {
             PlayerMessage::MoveCard { source, destination } => {
-                let source_card_in_pile = CardInPile::from_pointer(&server.game, &source).await;
+                let Some(source_card_in_pile) = CardInPile::from_pointer(&server.game, &source).await else {
+                    return;
+                };
                 if let Some(card) = source_card_in_pile.card().await {
                     let card_owner = card.owner.lock().await;
                     if !server.game.rules.rights_to_touch_ones_pile(&self.player, &source_card_in_pile.pile().config.owner, &card_owner) {
@@ -59,7 +61,9 @@ impl Client {
                     source_card_in_pile.card().await.unwrap().name.lock().await,
                     serde_json::to_string_pretty(&destination).unwrap()
                 );
-                let destination_space_in_pile = CardInPile::from_pointer(&server.game, &destination).await;
+                let Some(destination_space_in_pile) = CardInPile::from_pointer(&server.game, &destination).await else {
+                    return;
+                };
                 if let Some(_) = source_card_in_pile.move_to(destination_space_in_pile).await {
                     server.notify_clients_about_move(&source, &destination).await;
                 }
@@ -99,7 +103,7 @@ impl Client {
                 server.notify_clients_about_chip_create(chip, &destination).await;
             },
             PlayerMessage::ViewBoard(pointer) => {
-                let board = server.game.board(&pointer).await.clone();
+                let board = server.game.board(&pointer).await.clone().unwrap();
 
                 log::trace!("Player {} views board: {:?}", self.player.0, pointer);
                 self.notify_about_action(Arc::new(
@@ -116,13 +120,17 @@ impl Client {
                     return;
                 };
                 let card = Arc::new(Card::from_raw(&raw_card, self.player.clone(), Visibility::Public));
-                let destination_space_in_pile = CardInPile::from_pointer(&server.game, &destination).await;
+                let Some(destination_space_in_pile) = CardInPile::from_pointer(&server.game, &destination).await else {
+                    return;
+                };
                 destination_space_in_pile.insert(card.clone()).await;
                 server.notify_clients_about_create(card, &destination).await;
             },
 
             PlayerMessage::ChangeCardToRaw { target } => {
-                let target_card_in_pile = CardInPile::from_pointer(&server.game, &target).await;
+                let Some(target_card_in_pile) = CardInPile::from_pointer(&server.game, &target).await else {
+                    return;
+                };
                 let Some(target_card) = target_card_in_pile.card().await else {
                     return;
                 };
@@ -142,7 +150,9 @@ impl Client {
 
             PlayerMessage::ChangeCard { target, changes } => {
 
-                let target_card_in_pile = CardInPile::from_pointer(&server.game, &target).await;
+                let Some(target_card_in_pile) = CardInPile::from_pointer(&server.game, &target).await else {
+                    return;
+                };
                 let Some(target_card) = target_card_in_pile.card().await else {
                     return;
                 };
@@ -161,8 +171,10 @@ impl Client {
 
             PlayerMessage::ViewPile ( target ) => {
                 log::trace!("Player {} views pile: # {} #", self.player.0, serde_json::to_string_pretty(&target).unwrap());
-                let pile_view = PileView::from_pile(server.game.pile(&target).await, &self.player).await;
-                self.notify_about_action(Arc::new(Action::ViewPile {target: target, pile: pile_view})).await;
+                if let Some(pile) = server.game.pile(&target).await {
+                    let pile_view = PileView::from_pile(pile, &self.player).await;
+                    self.notify_about_action(Arc::new(Action::ViewPile {target: target, pile: pile_view})).await;
+                }
             },
 
             PlayerMessage::ViewCard ( target ) => {

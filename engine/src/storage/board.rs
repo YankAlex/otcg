@@ -40,7 +40,7 @@ pub struct ChipOnBoard {
 impl ChipOnBoard {
     pub async fn from_pointer(game: &Game, pointer: &ChipPointer) -> Self {
         Self {
-            board: game.board(&pointer.board).await,
+            board: game.board(&pointer.board).await.unwrap(),
             index: pointer.index,
         }
     }

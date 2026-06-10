@@ -65,8 +65,8 @@ impl CardInPile {
         }
     }
 
-    pub async fn from_pointer(game: &Game, pointer: &CardPointer) -> Self {
-        Self::new(game.pile(&pointer.pile).await, pointer.index)
+    pub async fn from_pointer(game: &Game, pointer: &CardPointer) -> Option<Self> {
+        game.pile(&pointer.pile).await.map(|pile| Self { pile, index: pointer.index })
     }
     
     pub fn top_of(pile: Arc<Pile>) -> Self {

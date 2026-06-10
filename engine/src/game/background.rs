@@ -3,7 +3,7 @@ use std::{collections::HashMap};
 use futures_util::future::join_all;
 use serde::{Deserialize, Serialize};
 
-use crate::{game::{player::Player}, storage::{Library, card::{Card, RawCard}}};
+use crate::{game::{player::Player}, storage::{Library, card::RawCard}};
 
 pub struct PlayerBackground {
     pub piles: HashMap<Box<str>, Vec<RawCard>>,

@@ -78,20 +78,20 @@ impl Game {
         }
     }
 
-    pub async fn pile(&self, pile: &PilePointer) -> Arc<Pile> {
+    pub async fn pile(&self, pile: &PilePointer) -> Option<Arc<Pile>> {
         match &pile.r#type {
-            PileType::Name(name) if pile.player == 0 => self.piles.get(name).unwrap().clone(),
-            PileType::Name(name) => self.get_player_area(&Player(pile.player)).unwrap().piles.get(name).unwrap().clone(),
-            PileType::Battlefield(index) => self.battlefields.lock().await[*index as usize].sides[pile.player as usize].clone(),
+            PileType::Name(name) if pile.player == 0 => self.piles.get(name).cloned(),
+            PileType::Name(name) => self.get_player_area(&Player(pile.player)).unwrap().piles.get(name).cloned(),
+            PileType::Battlefield(index) => self.battlefields.lock().await.get(*index as usize).map(|x| x.sides[pile.player as usize].clone()),
         }
     }
-    pub async fn board(&self, board: &BoardPointer) -> Arc<Board> {
+    pub async fn board(&self, board: &BoardPointer) -> Option<Arc<Board>> {
         match board {
-            BoardPointer::Name(name) => self.boards.get(name).unwrap().clone()
+            BoardPointer::Name(name) => self.boards.get(name).cloned()
         }
     }
     pub async fn card(&self, card: &CardPointer) -> Option<Arc<Card>> {
-        CardInPile::from_pointer(&self, card).await.card().await
+        CardInPile::from_pointer(&self, card).await?.card().await
     }
     pub async fn next_active_player(&self) {
         let mut active_player = self.active_player.lock().await;

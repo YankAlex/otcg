@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use tokio::sync::Mutex;
 
-use crate::{game::{player::{self, Player}, viewable::Viewable, visibility::Visibility}, storage::Error};
+use crate::{game::{player::Player, viewable::Viewable, visibility::Visibility}, storage::Error};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RawCard {
