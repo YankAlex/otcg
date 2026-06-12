@@ -67,12 +67,6 @@ impl Rules {
                             shuffled: false,
                             owner: player.clone(),
                         });
-                        piles.insert("base".into(), PileConfig {
-                            only_raw_cards: false,
-                            default_visibility: Visibility::Public,
-                            shuffled: false,
-                            owner: player.clone(),
-                        });
                     }
                 }
                 piles 
@@ -151,7 +145,7 @@ impl Rules {
                 boards.insert("board".into(), RawBoard {
                     height: 100,
                     width: 100,
-                    img_url: "".into(),
+                    img_url: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fyptpnirqgfmxphjvsdjz.supabase.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2Fmaps%2FztVO81E93axYHrNsmlAWX.webp&f=1&nofb=1&ipt=7a7b8690e923a354760746172e9aab055d14e5530c33ef7091e37b95254809cf".into(),
                 });
                 boards
             },

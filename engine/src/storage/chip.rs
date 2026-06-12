@@ -31,7 +31,7 @@ impl Chip {
     pub fn new_from_raw(raw: RawChip, owner: Player, visibility: Visibility) -> Self {
         Self {
             health: Mutex::new(raw.health),
-            coordinates: Mutex::new(Coordinates::new(0, 0)),
+            coordinates: Mutex::new(Coordinates::new(0.0, 0.0)),
             owner: Mutex::new(owner),
             visibility: Mutex::new(visibility),
             raw,

@@ -201,8 +201,8 @@ It represents how player can see a card.
 
 ```
 {
-    "x": <i32>,
-    "y": <i32>
+    "x": <f32>,
+    "y": <f32>
 }
 ```
 
