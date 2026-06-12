@@ -26,7 +26,10 @@ impl Pile {
         }
     }
     
-    pub fn from_raw_cards(config: PileConfig, cards: Vec<RawCard>) -> Self {
+    pub fn from_raw_cards(config: PileConfig, mut cards: Vec<RawCard>) -> Self {
+        if config.shuffled {
+            rand::seq::SliceRandom::shuffle(cards.as_mut_slice(), &mut rand::rng());
+        }
         Pile {
             cards: Mutex::new(cards.iter().map(|raw| Arc::new(Card::from_raw(raw, config.owner.clone(), config.default_visibility.clone()))).collect()),
             config,
