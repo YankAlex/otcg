@@ -213,8 +213,9 @@ impl Client {
     async fn client_listener(self: Arc<Self>, server: Arc<Server>) {
         loop {
             let mut reader = self.ws_reader.lock().await;
-            let message: PlayerMessage = from_str(reader.next().await.unwrap().unwrap().to_text().unwrap()).unwrap();
-            self.handle_message(message, server.clone()).await
+            if let Ok(message) = from_str(reader.next().await.unwrap().unwrap().to_text().unwrap()) {
+                self.handle_message(message, server.clone()).await;
+            }
         }
     }
 
