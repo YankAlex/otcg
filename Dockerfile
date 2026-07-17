@@ -38,10 +38,12 @@ RUN npm run build
 
 FROM nginx:1.29.0-alpine3.22 AS server
 
-COPY --from=builder /app/target/release/otcg /otcg
+WORKDIR /app
+
+COPY --from=builder /app/target/release/otcg ./otcg
 COPY --from=frontend-builder /app/dist /frontend
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
-CMD ["sh", "-c", "nginx -g 'daemon off;' & RUST_LOG=trace RUST_BACKTRACE=1 /otcg"]
+CMD ["sh", "-c", "nginx -g 'daemon off;' & RUST_LOG=trace RUST_BACKTRACE=1 GAME=unmatched /app/otcg"]
