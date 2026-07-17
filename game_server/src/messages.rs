@@ -1,4 +1,4 @@
-use engine::{game::{coordinates::Coordinates, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::CardChange}, storage::chip::ChipChange};
+use engine::{game::{coordinates::Coordinates, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::CardChange}, storage::{board::BoardChange, chip::ChipChange}};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -7,6 +7,10 @@ pub enum PlayerMessage {
     MoveCard {
         source: CardPointer,
         destination: CardPointer,
+    },
+    ShuffleCardToPile {
+        source: CardPointer,
+        destination: PilePointer,
     },
     ChangeCardToRaw {
         target: CardPointer,
@@ -27,6 +31,10 @@ pub enum PlayerMessage {
     ChangeChip {
         target: ChipPointer,
         changes: ChipChange,
+    },
+    ChangeBoard {
+        target: BoardPointer,
+        changes: BoardChange,
     },
     TurnEnd,
     Surrender,

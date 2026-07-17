@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
-use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{BoardView, CardChange, CardView, ChipView, PileView}, visibility::Visibility}, storage::{Library, board::ChipOnBoard, card::Card, chip::Chip}};
+use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{BoardView, CardChange, CardView, ChipView, PileView}, visibility::Visibility}, storage::{Library, board::{Board, ChipOnBoard}, card::Card, chip::Chip}};
 use futures_util::{SinkExt, StreamExt, stream::{SplitSink, SplitStream}};
+use rand::Rng;
 use serde_json::{from_str, to_string_pretty};
 use tokio::sync::Mutex;
 
@@ -28,7 +29,9 @@ impl Client {
     pub async fn notify_about_action(&self, action: Arc<Action>) {
         let writer = self.ws_writer.clone();
         let json = to_string_pretty(&*action.clone()).unwrap();
-        writer.lock().await.send(Message::Text(Utf8Bytes::from(json))).await.unwrap();
+        if let Err(err) = writer.lock().await.send(Message::Text(Utf8Bytes::from(json))).await {
+            log::error!("While notifying client: {err}");
+        }
     }
 
     pub async fn recieve_player_background(self: Arc<Self>, library: &Library) -> PlayerBackground {
@@ -68,6 +71,34 @@ impl Client {
                     server.notify_clients_about_move(&source, &destination).await;
                 }
             },
+            PlayerMessage::ShuffleCardToPile { source, destination } => {
+                let Some(source_card_in_pile) = CardInPile::from_pointer(&server.game, &source).await else {
+                    return;
+                };
+                if let Some(card) = source_card_in_pile.card().await {
+                    let card_owner = card.owner.lock().await;
+                    if !server.game.rules.rights_to_touch_ones_pile(&self.player, &source_card_in_pile.pile().config.owner, &card_owner) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+                log::trace!("Player {} shuffles card: {} --[{}]-> {}",
+                    self.player.0,
+                    serde_json::to_string_pretty(&source).unwrap(),
+                    source_card_in_pile.card().await.unwrap().name.lock().await,
+                    serde_json::to_string_pretty(&destination).unwrap()
+                );
+                let Some(destination_pile) = server.game.pile(&destination).await else {
+                    return;
+                };
+                let pile_size = destination_pile.size().await;
+                let random_index = rand::rng().random_range(0..=pile_size);
+                let destination_space = CardInPile::new(destination_pile, random_index as i32);
+                if let Some(_) = source_card_in_pile.move_to(destination_space).await {
+                    server.notify_clients_about_card_shuffle_to_pile(&source, &destination).await;
+                }
+            },
             PlayerMessage::ChangeChip { target, changes } => {
                 let chip_on_board = ChipOnBoard::from_pointer(&server.game, &target).await;
 
@@ -75,6 +106,16 @@ impl Client {
                     log::trace!("Player {} changes chip: {:?} to {:?}", self.player.0, target, changes);
                     changes.apply_to(&chip).await;
                     server.notify_clients_about_chip_change(&target, chip).await;
+                }
+                
+            },
+            PlayerMessage::ChangeBoard { target, changes } => {
+                let board = server.game.board(&target).await;
+
+                if let Some(board) = board {
+                    log::trace!("Player {} changes board: {:?} to {:?}", self.player.0, target, changes);
+                    changes.apply_to(&board).await;
+                    server.notify_clients_about_board_change(&target, board).await;
                 }
                 
             },
@@ -213,7 +254,16 @@ impl Client {
     async fn client_listener(self: Arc<Self>, server: Arc<Server>) {
         loop {
             let mut reader = self.ws_reader.lock().await;
-            if let Ok(message) = from_str(reader.next().await.unwrap().unwrap().to_text().unwrap()) {
+            let Some(message) = reader.next().await else {
+                break;
+            };
+            let Ok(message) = message else {
+                continue;
+            };
+            let Ok(text) = message.to_text() else {
+                continue;
+            };
+            if let Ok(message) = from_str(text) {
                 self.handle_message(message, server.clone()).await;
             }
         }

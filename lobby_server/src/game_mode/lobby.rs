@@ -1,6 +1,7 @@
 use std::{collections::{HashMap, VecDeque}, sync::Arc};
 
 use axum::{extract::{Path, State, WebSocketUpgrade, ws::WebSocket}, response::Response};
+use game_server::player;
 use tokio::sync::Mutex;
 
 use crate::{client::Client, game_parameters::GameParameters};
@@ -64,7 +65,7 @@ impl LobbiesState {
         if let Some(lobby) = lobbies.get(id) {
             match &lobby {
                 Lobby::Started { game } => {
-                    game.clone().add_watcher(ws).await;
+                    game.clone().add_client(ws, game_server::player::WATCHER).await;
                     log::info!("Succesfuly added watcher to already started lobby.");
                 },
                 Lobby::Waiting { watchers, .. } => {
@@ -75,7 +76,7 @@ impl LobbiesState {
         };
     }
 
-    pub async fn add_player_to_lobby(&self, id: &i32, ws: WebSocket) {
+    pub async fn add_player_to_lobby(&self, id: &i32, mut ws: WebSocket) {
         log::trace!("Trying to add player to the lobby.");
         let mut lobbies = self.lobbies.lock().await;
         if let None = lobbies.get(id) {
@@ -83,8 +84,23 @@ impl LobbiesState {
         }
         if let Some(lobby) = lobbies.get_mut(id) {
             match &lobby {
-                Lobby::Started { .. } => {
-                    log::warn!("Can't add player to already started lobby.");
+                Lobby::Started { game } => {
+                    let _ = ws.send("\"choose_player\"".into()).await;
+                    let Some(Ok(player)) = ws.recv().await else {
+                        log::warn!("Client closed connection before choosed player or can't read message from ws.");
+                        return;
+                    };
+                    let Ok(text) = player.to_text() else {
+                        log::warn!("Client send wrong format message when choose player.");
+                        return;
+                    };
+                    let Ok(number) = text.parse::<i32>() else {
+                        log::warn!("Client send not i32 message when choose player.");
+                        return;
+                    };
+
+                    game.clone().add_client(ws, player::Player(number)).await;
+                    log::warn!("Succesfuly added player to already started lobby.");
                 },
                 Lobby::Waiting { players, .. } => {
                     players.lock().await.push_back(Client::new(ws));

@@ -1,7 +1,9 @@
+pub use engine::game::player;
+
 use std::{path::PathBuf, sync::Arc};
 use rand::seq::SliceRandom;
 use tokio::sync::Mutex;
-use engine::{game::{Game, player::{self, Player}, pointer::{CardPointer, ChipPointer}, view::ChipView}, storage::{Library, card::Card, chip::Chip, rules::Rules}};
+use engine::{game::{Game, player::Player, pointer::{BoardPointer, CardPointer, ChipPointer, PilePointer}, view::{BoardView, ChipView}}, storage::{Library, board::Board, card::Card, chip::Chip, rules::Rules}};
 use axum::extract::ws::WebSocket;
 use futures_util::future::join_all;
 use engine::game::view;
@@ -49,9 +51,9 @@ impl Server {
             clients: Mutex::new(clients),
         }
     }
-    
-    pub async fn add_watcher(self: Arc<Self>, watcher: WebSocket) {
-        let client = Arc::new(Client::new(watcher, player::WATCHER));
+
+    pub async fn add_client(self: Arc<Self>, web_socket: WebSocket, player: Player) {
+        let client = Arc::new(Client::new(web_socket, player));
         tokio::spawn(client.clone().start_player(self.clone()));
         self.clients.lock().await.push(client);
     }
@@ -93,6 +95,27 @@ impl Server {
             });
             pl.notify_about_action(action).await;
         }).collect::<Vec<_>>()).await;
+    }
+
+    pub async fn notify_clients_about_board_change(&self, target: &BoardPointer, new_board: Arc<Board>) {
+        let clients = self.clients.lock().await.clone();
+        join_all(clients.iter().map(async |pl| {
+            let action = Arc::new(Action::BoardChanged {
+                new_board: BoardView::from_board(new_board.clone(), &pl.player).await,
+                target: target.clone(),
+            });
+            pl.notify_about_action(action).await;
+        }).collect::<Vec<_>>()).await;
+    }
+    
+    pub async fn notify_clients_about_card_shuffle_to_pile(&self, source: &CardPointer, destination: &PilePointer) {
+        let action = Arc::new(Action::CardShuffledToPile {
+            source: source.clone(),
+            destination: destination.clone(),
+        });
+        log::warn!("notifying about shuffling");
+        let clients = self.clients.lock().await.clone();
+        join_all(clients.iter().map(async |pl| pl.notify_about_action(action.clone()).await).collect::<Vec<_>>()).await;
     }
 
     pub async fn notify_clients_about_move(&self, source: &CardPointer, destination: &CardPointer) {

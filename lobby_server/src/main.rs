@@ -20,7 +20,7 @@ async fn main() {
     let game_parameters = GameParameters {
         name: std::env::var("GAME").unwrap_or("riftbound".to_string()).into(),
         players_count: usize::from_str_radix(&std::env::var("PLAYERS").unwrap_or("2".to_string()), 10).unwrap_or(2),
-        library_path: PathBuf::from(std::env::var("LIBRARY").unwrap_or(".library.json".to_string())),
+        library_path: PathBuf::from(std::env::var("LIBRARY").unwrap_or(".otcglib".to_string())),
     };
 
     let queue = Arc::new(QueueState::new(game_parameters.clone()));

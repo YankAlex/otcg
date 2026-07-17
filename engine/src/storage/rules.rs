@@ -19,8 +19,7 @@ impl Rules {
     }
     pub fn battlefields_count(&self) -> usize {
         match &self.name[..] {
-            "riftbound" => 2,
-            _ => 1,
+            _ => 2,
         }
     }
     pub fn rights_to_touch_ones_pile(&self, player: &Player, pile_owner: &Player, card_owner: &Player) -> bool {

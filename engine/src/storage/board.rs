@@ -56,4 +56,16 @@ impl ChipOnBoard {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BoardChange {
+    #[serde(skip_serializing_if="Option::is_none")]
+    img_url: Option<Box<str>>,
+}
 
+impl BoardChange {
+    pub async fn apply_to(&self, board: &Board) {
+        if let Some(img_url) = self.img_url.clone() {
+            *board.img_url.lock().await = img_url;
+        }
+    }
+}

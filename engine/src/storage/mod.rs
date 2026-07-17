@@ -35,10 +35,13 @@ impl Library {
                             if let Ok(value) = from_str::<Value>(&string) {
                                 cards.append(&mut value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
                                 chips.append(&mut value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
+                            } else {
+                                log::info!("{:?}: {:?}", file_entry.path(), from_str::<Value>(&string));
                             }
                         }
                     }
                 }
+                log::info!("{:?}", cards);
                 Self {
                     cards: Mutex::new(cards),
                     chips: Mutex::new(chips),

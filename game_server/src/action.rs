@@ -8,6 +8,10 @@ pub enum Action {
         source: CardPointer,
         destination: CardPointer,
     },
+    CardShuffledToPile {
+        source: CardPointer,
+        destination: PilePointer,
+    },
     CardCreated {
         destination: CardPointer,
         card: CardView,
@@ -45,6 +49,11 @@ pub enum Action {
         target: ChipPointer,
         new_chip: ChipView,
     },
+    BoardChanged {
+        target: BoardPointer,
+        new_board: BoardView,
+    },
+
     NextTurn (Player),
     BackgroundRequest,
 }

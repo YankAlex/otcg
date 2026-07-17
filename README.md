@@ -13,7 +13,7 @@ To run use `cargo run`. You can specify enviroment variables
 |-------|---------------|---------------------------------------|
 | `GAME` | riftbound     | What game rules use
 | `PLAYERS` | 2          | Players count
-| `LIBRARY` | .library.json | From which path loads cards&chips library
+| `LIBRARY` | .otcglib | From which path loads cards&chips library
 | `ADDRESS` | 0.0.0.0:8126 | Where does server for gathering player hosts
 
 
@@ -555,7 +555,7 @@ Next turn of `next_turn` player.
     "game_info": {
         "your_number": <number of player-receiver i32>,
         "players_count": <players count usize>,
-        "battlefields_count": <battlegrounds count usize>
+        "battlefields_count": <battlefields count usize>
     }
 }
 ```
