@@ -1,5 +1,5 @@
 use std::{fs, path::Path};
-use serde_json::{from_str, Value, value::Map};
+use serde_json::{Value, value::Map};
 use tokio::sync::Mutex;
 
 use crate::storage::{card::RawCard, chip::RawChip};
@@ -19,10 +19,27 @@ impl Library {
         match path.is_file() {
             true => {
                 let string = fs::read_to_string(path).unwrap();
-                let value: Value = from_str(&string).unwrap();
-                Self {
-                    cards: Mutex::new(value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
-                    chips: Mutex::new(value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
+                match path.extension().unwrap().to_str() {
+                    Some("json") => {
+                        let value: Value = serde_json::from_str(&string).unwrap();
+                        Self {
+                            cards: Mutex::new(value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
+                            chips: Mutex::new(value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
+                        }
+                    },
+                    Some("toml") => {
+                        let value: Value = toml::from_str(&string).unwrap();
+                        Self {
+                            cards: Mutex::new(value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
+                            chips: Mutex::new(value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone()),
+                        }
+                    },
+                    _ => {
+                        Self {
+                            cards: Mutex::new(Map::new()),
+                            chips: Mutex::new(Map::new()),
+                        }
+                    }
                 }
             },
             false => {
@@ -32,16 +49,24 @@ impl Library {
                 for file in files {
                     if let Ok(file_entry) = file {
                         if let Ok(string) = fs::read_to_string(file_entry.path()) {
-                            if let Ok(value) = from_str::<Value>(&string) {
-                                cards.append(&mut value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
-                                chips.append(&mut value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
-                            } else {
-                                log::info!("{:?}: {:?}", file_entry.path(), from_str::<Value>(&string));
+                            match file_entry.path().extension().unwrap().to_str() {
+                                Some("json") => {
+                                    if let Ok(value) = serde_json::from_str::<Value>(&string) {
+                                        cards.append(&mut value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
+                                        chips.append(&mut value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
+                                    }
+                                },
+                                Some("toml") => {
+                                    if let Ok(value) = toml::from_str::<Value>(&string) {
+                                        cards.append(&mut value.get("cards").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
+                                        chips.append(&mut value.get("chips").unwrap_or(&Map::new().into()).as_object().unwrap().clone());
+                                    }
+                                },
+                                _ => {}
                             }
                         }
                     }
                 }
-                log::info!("{:?}", cards);
                 Self {
                     cards: Mutex::new(cards),
                     chips: Mutex::new(chips),
@@ -62,6 +87,9 @@ impl Library {
             return Err(Error::DontExist(name.into()));
         };
         RawChip::from_value(value.clone())
+    }
+    pub async fn cards_json(&self) -> serde_json::Value {
+        self.cards.lock().await.clone().into()
     }
 }
 

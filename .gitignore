@@ -1,4 +1,5 @@
 /target
 .library.json
 .otcglib*
+Cargo.lock
 */target

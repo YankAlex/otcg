@@ -113,6 +113,15 @@ impl Server {
             source: source.clone(),
             destination: destination.clone(),
         });
+        log::warn!("notifying about card inshuffling");
+        let clients = self.clients.lock().await.clone();
+        join_all(clients.iter().map(async |pl| pl.notify_about_action(action.clone()).await).collect::<Vec<_>>()).await;
+    }
+
+    pub async fn notify_clients_about_pile_shuffle(&self, target: &PilePointer) {
+        let action = Arc::new(Action::PileShuffled {
+            target: target.clone(),
+        });
         log::warn!("notifying about shuffling");
         let clients = self.clients.lock().await.clone();
         join_all(clients.iter().map(async |pl| pl.notify_about_action(action.clone()).await).collect::<Vec<_>>()).await;

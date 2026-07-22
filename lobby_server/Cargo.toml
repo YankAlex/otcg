@@ -9,11 +9,14 @@ path = "src/main.rs"
 
 [dependencies]
 
-axum = { version = "0.8.4", features = ['ws'] }
+axum = { version = "*", features = ['ws'] }
 game_server = { path = "../game_server" }
 tokio = { version = "1.45.1", features = ['full'] }
+serde_json = "*"
 futures-util = "0.3.31"
+tower-http = { version = "*", features = ["full"] }
 log = { version = "*" }
+engine = { path = "../engine" }
 env_logger = { version = "*" }
 rand = "0.10.2"
 fibre = "*"

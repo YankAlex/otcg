@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use engine::{game::{background::{PlayerBackground, PlayerBackgroundNames}, pile::CardInPile, player::Player, view::{BoardView, CardChange, CardView, ChipView, PileView}, visibility::Visibility}, storage::{Library, board::ChipOnBoard, card::Card, chip::Chip}};
 use futures_util::{SinkExt, StreamExt, stream::{SplitSink, SplitStream}};
-use rand::{Rng, RngExt};
+use rand::{Rng, RngExt, seq::SliceRandom};
 use serde_json::{from_str, to_string_pretty};
 use tokio::sync::Mutex;
 
@@ -70,6 +70,14 @@ impl Client {
                 if let Some(_) = source_card_in_pile.move_to(destination_space_in_pile).await {
                     server.notify_clients_about_move(&source, &destination).await;
                 }
+            },
+            PlayerMessage::ShufflePile { target } => {
+                let Some(target_pile) = server.game.pile(&target).await else {
+                    return;
+                };
+                target_pile.cards.lock().await.shuffle(&mut rand::rng());
+                
+                server.notify_clients_about_pile_shuffle(&target).await;
             },
             PlayerMessage::ShuffleCardToPile { source, destination } => {
                 let Some(source_card_in_pile) = CardInPile::from_pointer(&server.game, &source).await else {

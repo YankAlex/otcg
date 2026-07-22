@@ -1,12 +1,14 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use axum::{Router, routing::any};
+use axum::{Router, http::Method, routing::{any, get}};
+use tower_http::cors::{CorsLayer, self};
 
-use crate::{game_mode::{lobby::{LobbiesState, lobbies_player_websocket_upgrader, lobbies_watcher_websocket_upgrader}, queue::{QueueState, queue_websocket_upgrader, trying_gather_players}}, game_parameters::GameParameters};
+use crate::{game_mode::{lobby::{LobbiesState, lobbies_player_websocket_upgrader, lobbies_watcher_websocket_upgrader}, queue::{QueueState, queue_websocket_upgrader, trying_gather_players}}, game_parameters::GameParameters, library::library_router};
 
 mod client;
 mod game_mode;
 mod game_parameters;
+mod library;
 
 const DURATION_BETWEEN_GAME_GATHERINGS: Duration = Duration::from_millis(1000);
 
@@ -23,6 +25,11 @@ async fn main() {
         library_path: PathBuf::from(std::env::var("LIBRARY").unwrap_or(".otcglib".to_string())),
     };
 
+    let cors_layer = CorsLayer::new()
+        .allow_origin(cors::Any)  // Open access to selected route
+        .allow_methods(cors::Any)
+        .allow_headers(cors::Any);
+
     let queue = Arc::new(QueueState::new(game_parameters.clone()));
     let lobbies = Arc::new(LobbiesState::new(game_parameters.clone()));
     let queue_router = Router::new()
@@ -33,8 +40,11 @@ async fn main() {
         .route("/{lobby_id}/watcher/ws", any(lobbies_watcher_websocket_upgrader))
         .with_state(lobbies.clone());
     let app = Router::new()
+        .route("/library", get(library_router))
+        .with_state(game_parameters.clone())
         .nest("/game_queue", queue_router)
-        .nest("/lobby", lobby_router); 
+        .nest("/lobby", lobby_router)
+        .layer(cors_layer);
     let listener = tokio::net::TcpListener::bind(address).await.unwrap();
     tokio::spawn(trying_gather_players(queue.clone()));
     log::info!("Succesfully starting the lobby_server.");

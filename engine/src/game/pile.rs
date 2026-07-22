@@ -14,7 +14,7 @@ pub struct PileConfig {
 
 #[derive(Debug)]
 pub struct Pile {
-    cards: Mutex<Vec<Arc<Card>>>, 
+    pub cards: Mutex<Vec<Arc<Card>>>, 
     pub config: PileConfig,
 }
 

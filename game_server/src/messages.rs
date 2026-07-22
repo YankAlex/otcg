@@ -12,6 +12,9 @@ pub enum PlayerMessage {
         source: CardPointer,
         destination: PilePointer,
     },
+    ShufflePile {
+        target: PilePointer,
+    },
     ChangeCardToRaw {
         target: CardPointer,
     },

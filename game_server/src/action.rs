@@ -12,6 +12,9 @@ pub enum Action {
         source: CardPointer,
         destination: PilePointer,
     },
+    PileShuffled {
+        target: PilePointer,
+    },
     CardCreated {
         destination: CardPointer,
         card: CardView,

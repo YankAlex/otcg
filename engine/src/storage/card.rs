@@ -30,6 +30,16 @@ pub struct RawCard {
     pub nature: Box<str>,
     #[serde(default)]
     pub back_side_url: Box<str>,
+    #[serde(default)]
+    pub set: Box<str>,
+    #[serde(default)]
+    pub set_index: Box<str>,
+    #[serde(default="default_language")]
+    pub language: Box<str>,
+}
+
+fn default_language() -> Box<str> {
+    "EN".into()
 }
 
 #[derive(Debug)]

@@ -71,6 +71,9 @@ When lobby starts, no more players could connect to it, even if game has ended.
     "art_url": "<url of card art>" ? "",
     "card_picture_url": "<url of card picture>" ? "",
     "back_side_url": "<url of card's back side>" ? ""
+    "set": "<card set>" ? "",
+    "set_index": "<index in set>" ? "",
+    "language": "<card's language>" ? ""
 }
 ```
 
@@ -191,7 +194,7 @@ Visibile to noone | visible to owner | visible to everyone.
     "comments": "<comments>",
     "nature": "<nature>",
     "visible_to_me": <is it card visivle to player bool>,
-    "back_side_url": "<card back side url>"
+    "back_side_url": "<card back side url>",
 }
 ```
 
@@ -259,6 +262,31 @@ Players can communicate with server per `message`s in `json` format.
 ```
 
 Player moves card from `source` to `destination`.
+
+## Shuffle card to pile
+
+```
+{
+    "shuffle_card_to_pile": {
+        "source": <CardPointer>,
+        "destination": <PilePointer>
+    }
+}
+```
+
+Player shuffles card from `source` to pile at `destination`.
+
+## Shuffle pile
+
+```
+{
+    "shuffle_pile": {
+        "target": <PilePointer>
+    }
+}
+```
+
+Player shuffles pile at `destination`.
 
 ## Change card
 
@@ -432,7 +460,32 @@ Server communicates with players by `action`s in `json` format.
 }
 ```
 
-Some player moved card from `source` to `destination`.
+Server communicates with players by `action`s in `json` format.
+
+## Card shuffled to pile
+
+```
+{
+    "card_shuffled_to_pile": {
+        "source": <CardPointer>,
+        "destination": <PilePointer>
+    }
+}
+```
+
+Some player shuffled card from `source` to pile at `destination`.
+
+## Pile shuffled
+
+```
+{
+    "pile_shuffled": {
+        "target": <PilePointer>
+    }
+}
+```
+
+Some player shuffled pile at `destination`.
 
 ## Card changed
 

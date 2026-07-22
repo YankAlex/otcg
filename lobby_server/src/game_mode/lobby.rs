@@ -85,22 +85,25 @@ impl LobbiesState {
         if let Some(lobby) = lobbies.get_mut(id) {
             match &lobby {
                 Lobby::Started { game } => {
-                    let _ = ws.send("\"choose_player\"".into()).await;
-                    let Some(Ok(player)) = ws.recv().await else {
-                        log::warn!("Client closed connection before choosed player or can't read message from ws.");
-                        return;
-                    };
-                    let Ok(text) = player.to_text() else {
-                        log::warn!("Client send wrong format message when choose player.");
-                        return;
-                    };
-                    let Ok(number) = text.parse::<i32>() else {
-                        log::warn!("Client send not i32 message when choose player.");
-                        return;
-                    };
+                    let game = game.clone();
+                    tokio::spawn(async move {
+                        let _ = ws.send("\"choose_player\"".into()).await;
+                        let Some(Ok(player)) = ws.recv().await else {
+                            log::warn!("Client closed connection before choosed player or can't read message from ws.");
+                            return;
+                        };
+                        let Ok(text) = player.to_text() else {
+                            log::warn!("Client send wrong format message when choose player.");
+                            return;
+                        };
+                        let Ok(number) = text.parse::<i32>() else {
+                            log::warn!("Client send not i32 message when choose player.");
+                            return;
+                        };
 
-                    game.clone().add_client(ws, player::Player(number)).await;
-                    log::warn!("Succesfuly added player to already started lobby.");
+                        game.clone().add_client(ws, player::Player(number)).await;
+                        log::warn!("Succesfuly added player to already started lobby.");
+                    });
                 },
                 Lobby::Waiting { players, .. } => {
                     players.lock().await.push_back(Client::new(ws));
